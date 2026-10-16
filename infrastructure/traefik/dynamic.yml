@@ -1,0 +1,65 @@
+# Static routes for the platform itself. Application routes are served dynamically by the API
+# (GET /internal/traefik/config, Traefik HTTP provider) from the database.
+#
+# Go templating: PLATFORM_HOST comes from the proxy container's environment.
+http:
+  routers:
+    platform-api:
+      rule: 'Host(`{{ env "PLATFORM_HOST" }}`) && (PathPrefix(`/api`) || PathPrefix(`/ws`) || Path(`/health`) || Path(`/ready`))'
+      entryPoints: [web]
+      service: backend
+      priority: 1000
+      middlewares: [platform-headers]
+
+    platform-web:
+      rule: 'Host(`{{ env "PLATFORM_HOST" }}`)'
+      entryPoints: [web]
+      service: frontend
+      priority: 900
+      middlewares: [platform-headers]
+
+    # Any other host (an unknown or stopped app): friendly 503 page.
+    app-unavailable:
+      rule: 'PathPrefix(`/`)'
+      entryPoints: [web]
+      service: frontend
+      priority: 1
+      middlewares: [unavailable-page]
+
+  middlewares:
+    platform-headers:
+      headers:
+        frameDeny: true
+        contentTypeNosniff: true
+        referrerPolicy: strict-origin-when-cross-origin
+        permissionsPolicy: "camera=(), microphone=(), geolocation=()"
+        customResponseHeaders:
+          Server: ""
+          X-Powered-By: ""
+
+    # Applied to every user app router (referenced as app-headers@file by the API).
+    app-headers:
+      headers:
+        customRequestHeaders:
+          X-Mini-PaaS: "1"
+        customResponseHeaders:
+          Server: ""
+
+    unavailable-page:
+      replacePath:
+        path: /__app_unavailable
+
+  services:
+    backend:
+      loadBalancer:
+        servers:
+          - url: "http://backend:8000"
+        healthCheck:
+          path: /health
+          interval: 10s
+          timeout: 3s
+
+    frontend:
+      loadBalancer:
+        servers:
+          - url: "http://frontend:8080"

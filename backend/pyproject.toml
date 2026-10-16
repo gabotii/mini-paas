@@ -1,0 +1,65 @@
+[project]
+name = "mini-paas-backend"
+version = "1.0.0"
+description = "Mini PaaS — API, deployment workers and runtime agent"
+requires-python = ">=3.12"
+
+[tool.black]
+line-length = 110
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "BLE", "C4", "SIM", "RUF", "ASYNC", "PT"]
+ignore = [
+  "E501",    # black owns line length
+  "S101",    # asserts are used for internal invariants
+  "S104",    # binding 0.0.0.0 is intended inside containers
+  "S603",    # subprocess calls use fixed argument lists
+  "S607",    # docker/git are resolved from PATH on purpose
+  "S108",    # /tmp paths refer to tmpfs mounts inside containers
+  "B008",    # FastAPI dependency defaults
+  "RUF001", "RUF002", "RUF003",  # typographic characters in docs and UI strings
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106", "S108", "S311", "BLE001", "PT018", "ASYNC240"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+warn_unused_ignores = true
+exclude = ["alembic/versions"]
+
+[[tool.mypy.overrides]]
+module = ["docker.*", "celery.*", "kombu.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["app.workers.tasks", "app.workers.celery_app"]
+disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["tests"]
+markers = [
+  "integration: requires PostgreSQL and Redis",
+  "docker: requires a reachable Docker daemon",
+]
+filterwarnings = [
+  "ignore::DeprecationWarning:celery.*",
+  "ignore::DeprecationWarning:kombu.*",
+  "ignore:Using `httpx` with `starlette.testclient`",
+]
