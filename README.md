@@ -437,3 +437,4 @@ horizontal scaling and autoscaling · Kubernetes / Docker Swarm backend · cloud
 teams, organizations and RBAC · usage limits and billing · S3-compatible storage for
 archives · Prometheus/Grafana metrics · Loki for logs (the `LogSink` is the seam) ·
 OpenTelemetry tracing.
+<img width="1905" height="906" alt="image" src="https://github.com/user-attachments/assets/c025593a-d1b9-4080-b3b9-6b9482033e17" />
